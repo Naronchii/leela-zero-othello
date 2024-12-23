@@ -43,13 +43,16 @@
 #include "Network.h"
 #include "UCTSearch.h"
 
+// This class is an extension of the class KoState
+
+// Initializes the game by initializing a kostate and other variables like time clock and previous states.
 void GameState::init_game(const int size, const float komi) {
     KoState::init_game(size, komi);
 
-    m_game_history.clear();
+    m_game_history.clear(); // Vector of kostates.
     m_game_history.emplace_back(std::make_shared<KoState>(*this));
 
-    m_timecontrol.reset_clocks();
+    m_timecontrol.reset_clocks(); // Instance of TimeControl, manages time.
 
     m_resigned = FastBoard::EMPTY;
 }
@@ -65,16 +68,18 @@ void GameState::reset_game() {
     m_resigned = FastBoard::EMPTY;
 }
 
+// Needed to traverse the past game states. It returns a boolean to check if the operation of moving forward with states was successful or not.
 bool GameState::forward_move() {
     if (m_game_history.size() > m_movenum + 1) {
         m_movenum++;
-        *(static_cast<KoState*>(this)) = *m_game_history[m_movenum];
+        *(static_cast<KoState*>(this)) = *m_game_history[m_movenum]; // Updates the kostate part of the gamestate to the new move number state.
         return true;
     } else {
         return false;
     }
 }
 
+// Works the same as forward_move but in reverse.
 bool GameState::undo_move() {
     if (m_movenum > 0) {
         m_movenum--;
@@ -89,15 +94,18 @@ bool GameState::undo_move() {
     }
 }
 
+// Returns to initial game state.
 void GameState::rewind() {
     *(static_cast<KoState*>(this)) = *m_game_history[0];
     m_movenum = 0;
 }
 
+// Calls our internal play_move function.
 void GameState::play_move(const int vertex) {
     play_move(get_to_move(), vertex);
 }
 
+// Calls the play_move function of ko_state.
 void GameState::play_move(const int color, const int vertex) {
     if (vertex == FastBoard::RESIGN) {
         m_resigned = color;
@@ -110,6 +118,7 @@ void GameState::play_move(const int color, const int vertex) {
     m_game_history.emplace_back(std::make_shared<KoState>(*this));
 }
 
+// Parses a text to play a move.
 bool GameState::play_textmove(std::string color, const std::string& vertex) {
     int who;
     transform(cbegin(color), cend(color), begin(color), tolower);
@@ -182,6 +191,7 @@ void GameState::anchor_game_history() {
     m_game_history.emplace_back(std::make_shared<KoState>(*this));
 }
 
+// Sets up a handicap.
 bool GameState::set_fixed_handicap(const int handicap) {
     if (!valid_handicap(handicap)) {
         return false;
